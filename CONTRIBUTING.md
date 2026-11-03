@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in vordr!
+Thanks for your interest in vörðr!
 
 ## Development
 

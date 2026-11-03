@@ -1,4 +1,4 @@
-# Vordr
+# vörðr
 
 Lightweight CVE scanner for homelab Docker stacks. Watches running containers via the Docker API, scans images via bundled Trivy CLI, and exposes vulnerability metrics via a Prometheus endpoint. Single container -- no Trivy sidecar needed.
 
