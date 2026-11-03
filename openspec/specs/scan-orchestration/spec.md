@@ -1,16 +1,15 @@
 ## MODIFIED Requirements
 
-### Requirement: Structured logging
-All components SHALL use structured slog logging with an `event` attribute for machine-parseable log events.
+### Requirement: Periodic rescan
+The scheduler SHALL skip excluded images when queuing rescans.
 
-#### Scenario: Scan lifecycle events
-- **WHEN** a scan completes
-- **THEN** the log entry SHALL include `event=scan_completed`, `image`, `duration`, and `counts` attributes
+#### Scenario: Excluded image during rescan
+- **WHEN** the scheduler iterates known images and one matches an exclude pattern
+- **THEN** it SHALL NOT be sent to the scan channel
 
-#### Scenario: Discovery events
-- **WHEN** a new image is discovered
-- **THEN** the log entry SHALL include `event=image_discovered`, `image`, and `container` attributes
+### Requirement: Worker pool scan with delta detection
+The worker SHALL perform delta detection after each successful scan and log new CVEs. Failed scans SHALL be sent to the retry queue.
 
-#### Scenario: Scheduled rescan
-- **WHEN** the scheduler triggers a rescan
-- **THEN** the log entry SHALL include `event=scheduled_rescan` and `images` count
+#### Scenario: Scan failure triggers retry
+- **WHEN** a scan fails
+- **THEN** the worker SHALL send the ImageRef to the retry queue

@@ -1,32 +1,20 @@
 ## MODIFIED Requirements
 
 ### Requirement: Environment variable based configuration
-The config package SHALL load all configuration from environment variables prefixed with `VORDR_`. The `Load` function SHALL accept a `getenv func(string) string` parameter for testability.
+The config SHALL add three new environment variables.
 
-#### Scenario: Default values
-- **WHEN** no environment variables are set
-- **THEN** Load SHALL return a Config with these defaults:
-  - TrivyCacheDir: `/var/cache/trivy`
-  - TrivyTimeout: `5m`
-  - ScanInterval: `6h`
-  - ScanWorkers: `3`
-  - ScanStagger: `30s`
-  - ListenAddr: `:9550`
-  - LogLevel: `info`
-  - LogFormat: `text`
+#### Scenario: Default values for new fields
+- **WHEN** no new environment variables are set
+- **THEN** Load SHALL return ExcludeImages as empty slice, AlertSeverity as "HIGH", RetryMaxBackoff as 15m
 
-#### Scenario: Custom cache directory
-- **WHEN** VORDR_TRIVY_CACHE_DIR is set to `/data/trivy`
-- **THEN** Load SHALL return a Config with TrivyCacheDir `/data/trivy`
+#### Scenario: VORDR_EXCLUDE_IMAGES
+- **WHEN** VORDR_EXCLUDE_IMAGES is `aquasec/trivy:*,*devcontainer*`
+- **THEN** ExcludeImages SHALL be ["aquasec/trivy:*", "*devcontainer*"]
 
-#### Scenario: Custom timeout
-- **WHEN** VORDR_TRIVY_TIMEOUT is set to `10m`
-- **THEN** Load SHALL return a Config with TrivyTimeout 10 minutes
+#### Scenario: VORDR_ALERT_SEVERITY validation
+- **WHEN** VORDR_ALERT_SEVERITY is set to "INVALID"
+- **THEN** Load SHALL return an error
 
-#### Scenario: Invalid timeout
-- **WHEN** VORDR_TRIVY_TIMEOUT is set to `not-a-duration`
-- **THEN** Load SHALL return a descriptive error
-
-#### Scenario: Removed VORDR_TRIVY_ADDR
-- **WHEN** VORDR_TRIVY_ADDR is set
-- **THEN** it SHALL be ignored (no longer used)
+#### Scenario: VORDR_RETRY_MAX_BACKOFF
+- **WHEN** VORDR_RETRY_MAX_BACKOFF is `20m`
+- **THEN** RetryMaxBackoff SHALL be 20 minutes

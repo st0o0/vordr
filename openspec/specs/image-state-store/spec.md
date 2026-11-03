@@ -1,12 +1,12 @@
 ## MODIFIED Requirements
 
-### Requirement: Image state lifecycle
-The store SHALL store vulnerability details ([]Vulnerability) alongside counts in ImageState. UpdateResult SHALL accept vulnerabilities. Snapshot SHALL copy vulnerabilities.
+### Requirement: Previous vulnerability tracking
+The store SHALL track the previous set of CVE IDs per image for delta detection.
 
-#### Scenario: Store vulnerability details
-- **WHEN** a worker updates scan results with vulnerability details
-- **THEN** the ImageState SHALL contain the full vulnerability list
+#### Scenario: After UpdateResult
+- **WHEN** UpdateResult is called with new vulnerabilities
+- **THEN** the previous vulnerability IDs SHALL be saved before overwriting with new ones
 
-#### Scenario: Snapshot includes vulnerabilities
+#### Scenario: PreviousVulnIDs in Snapshot
 - **WHEN** Snapshot() is called
-- **THEN** each ImageState SHALL include a copy of its vulnerabilities slice
+- **THEN** each ImageState SHALL include PreviousVulnIDs for delta comparison by the worker
