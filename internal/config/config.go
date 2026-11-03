@@ -4,21 +4,33 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"path"
 	"strconv"
 	"strings"
 	"time"
 )
 
-
 type Config struct {
-	TrivyCacheDir string
-	TrivyTimeout  time.Duration
-	ScanInterval  time.Duration
-	ScanWorkers   int
-	ScanStagger   time.Duration
-	ListenAddr    string
-	LogLevel      slog.Level
-	LogFormat     string
+	TrivyCacheDir   string
+	TrivyTimeout    time.Duration
+	ScanInterval    time.Duration
+	ScanWorkers     int
+	ScanStagger     time.Duration
+	ListenAddr      string
+	LogLevel        slog.Level
+	LogFormat       string
+	ExcludeImages   []string
+	AlertSeverity   string
+	RetryMaxBackoff time.Duration
+}
+
+func (c *Config) ShouldExclude(imageTag string) bool {
+	for _, pattern := range c.ExcludeImages {
+		if matched, _ := path.Match(pattern, imageTag); matched {
+			return true
+		}
+	}
+	return false
 }
 
 func Load(getenv func(string) string) (*Config, error) {
@@ -59,15 +71,40 @@ func Load(getenv func(string) string) (*Config, error) {
 		return nil, fmt.Errorf("VORDR_LOG_FORMAT must be 'text' or 'json', got %q", logFormat)
 	}
 
+	excludeRaw := envOrDefault(getenv, "VORDR_EXCLUDE_IMAGES", "")
+	var excludeImages []string
+	if excludeRaw != "" {
+		for _, p := range strings.Split(excludeRaw, ",") {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				excludeImages = append(excludeImages, p)
+			}
+		}
+	}
+
+	alertSeverity := strings.ToUpper(envOrDefault(getenv, "VORDR_ALERT_SEVERITY", "HIGH"))
+	validSeverities := map[string]bool{"UNKNOWN": true, "LOW": true, "MEDIUM": true, "HIGH": true, "CRITICAL": true}
+	if !validSeverities[alertSeverity] {
+		return nil, fmt.Errorf("invalid VORDR_ALERT_SEVERITY %q: must be UNKNOWN, LOW, MEDIUM, HIGH, or CRITICAL", alertSeverity)
+	}
+
+	retryMaxBackoff, err := parseDuration(getenv, "VORDR_RETRY_MAX_BACKOFF", "15m")
+	if err != nil {
+		return nil, err
+	}
+
 	return &Config{
-		TrivyCacheDir: trivyCacheDir,
-		TrivyTimeout:  trivyTimeout,
-		ScanInterval:  scanInterval,
-		ScanWorkers:  scanWorkers,
-		ScanStagger:  scanStagger,
-		ListenAddr:   listenAddr,
-		LogLevel:     logLevel,
-		LogFormat:    logFormat,
+		TrivyCacheDir:   trivyCacheDir,
+		TrivyTimeout:    trivyTimeout,
+		ScanInterval:    scanInterval,
+		ScanWorkers:     scanWorkers,
+		ScanStagger:     scanStagger,
+		ListenAddr:      listenAddr,
+		LogLevel:        logLevel,
+		LogFormat:       logFormat,
+		ExcludeImages:   excludeImages,
+		AlertSeverity:   alertSeverity,
+		RetryMaxBackoff: retryMaxBackoff,
 	}, nil
 }
 

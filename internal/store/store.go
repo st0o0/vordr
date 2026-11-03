@@ -14,15 +14,16 @@ type Store struct {
 }
 
 type entry struct {
-	ref        scanner.ImageRef
-	status     scanner.Status
-	containers []string
-	counts     map[string]int
-	fixable    map[string]int
-	scannedAt  time.Time
-	duration   time.Duration
-	errMsg     string
-	vulns      []scanner.Vulnerability
+	ref             scanner.ImageRef
+	status          scanner.Status
+	containers      []string
+	counts          map[string]int
+	fixable         map[string]int
+	scannedAt       time.Time
+	duration        time.Duration
+	errMsg          string
+	vulns           []scanner.Vulnerability
+	previousVulnIDs map[string]bool
 }
 
 func New() *Store {
@@ -90,6 +91,13 @@ func (s *Store) UpdateResult(image string, counts, fixable map[string]int, vulns
 	if !ok {
 		return
 	}
+	if e.vulns != nil {
+		prev := make(map[string]bool, len(e.vulns))
+		for _, v := range e.vulns {
+			prev[v.ID] = true
+		}
+		e.previousVulnIDs = prev
+	}
 	e.status = scanner.Scanned
 	e.counts = counts
 	e.fixable = fixable
@@ -144,6 +152,13 @@ func (s *Store) Snapshot() []scanner.ImageState {
 
 		if e.vulns != nil {
 			state.Vulnerabilities = slices.Clone(e.vulns)
+		}
+
+		if e.previousVulnIDs != nil {
+			state.PreviousVulnIDs = make(map[string]bool, len(e.previousVulnIDs))
+			for k, v := range e.previousVulnIDs {
+				state.PreviousVulnIDs[k] = v
+			}
 		}
 
 		out = append(out, state)

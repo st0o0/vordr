@@ -61,4 +61,5 @@ type ImageState struct {
 	Duration        time.Duration
 	Error           string
 	Vulnerabilities []Vulnerability
+	PreviousVulnIDs map[string]bool
 }

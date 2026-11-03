@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/st0o0/vordr/internal/retry"
 	"github.com/st0o0/vordr/internal/scanner"
 	"github.com/st0o0/vordr/internal/store"
 	"github.com/st0o0/vordr/internal/trivy"
@@ -23,16 +24,20 @@ type Pool struct {
 	store         *store.Store
 	scanner       Scanner
 	ActiveWorkers atomic.Int64
+	alertSeverity string
+	retryQueue    *retry.Queue
 	logger        *slog.Logger
 }
 
-func NewPool(workers int, scanCh <-chan scanner.ImageRef, s *store.Store, sc Scanner, logger *slog.Logger) *Pool {
+func NewPool(workers int, scanCh <-chan scanner.ImageRef, s *store.Store, sc Scanner, alertSeverity string, retryQueue *retry.Queue, logger *slog.Logger) *Pool {
 	return &Pool{
-		workers: workers,
-		scanCh:  scanCh,
-		store:   s,
-		scanner: sc,
-		logger:  logger,
+		workers:       workers,
+		scanCh:        scanCh,
+		store:         s,
+		scanner:       sc,
+		alertSeverity: alertSeverity,
+		retryQueue:    retryQueue,
+		logger:        logger,
 	}
 }
 
@@ -81,6 +86,9 @@ func (p *Pool) scan(ctx context.Context, ref scanner.ImageRef) {
 		}
 		p.logger.Error("scan failed", "event", "scan_failed", "image", key, "error", err, "duration", duration)
 		p.store.SetError(key, err.Error())
+		if p.retryQueue != nil {
+			p.retryQueue.Add(ref)
+		}
 		return
 	}
 
@@ -90,5 +98,35 @@ func (p *Pool) scan(ctx context.Context, ref scanner.ImageRef) {
 	}
 
 	p.store.UpdateResult(key, result.Counts, result.Fixable, vulns, duration)
+
+	if p.retryQueue != nil {
+		p.retryQueue.Reset(key)
+	}
+
+	// Delta detection
+	for _, img := range p.store.Snapshot() {
+		if img.Ref.String() != key {
+			continue
+		}
+		if img.PreviousVulnIDs == nil {
+			break
+		}
+		var newCVEs []string
+		var alertWorthy int
+		for _, v := range vulns {
+			if !img.PreviousVulnIDs[v.ID] {
+				newCVEs = append(newCVEs, v.ID)
+				if scanner.MeetsThreshold(v.Severity, p.alertSeverity) {
+					alertWorthy++
+				}
+			}
+		}
+		if len(newCVEs) > 0 {
+			p.logger.Warn("new CVEs detected", "event", "new_cves_detected",
+				"image", key, "new_count", len(newCVEs), "alert_worthy", alertWorthy, "cves", newCVEs)
+		}
+		break
+	}
+
 	p.logger.Info("scan complete", "event", "scan_completed", "image", key, "duration", duration, "counts", result.Counts)
 }

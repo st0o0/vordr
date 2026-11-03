@@ -116,6 +116,18 @@ func TestSetScanningAndUpdate(t *testing.T) {
 	if snap[0].Fixable["HIGH"] != 2 {
 		t.Fatalf("expected fixable HIGH=2, got %d", snap[0].Fixable["HIGH"])
 	}
+	if snap[0].PreviousVulnIDs != nil {
+		t.Fatalf("expected nil PreviousVulnIDs after first scan, got %v", snap[0].PreviousVulnIDs)
+	}
+
+	vulns2 := []scanner.Vulnerability{
+		{ID: "CVE-2024-0002", Severity: "CRITICAL"},
+	}
+	s.UpdateResult("nginx:latest", counts, fixable, vulns2, time.Second)
+	snap = s.Snapshot()
+	if len(snap[0].PreviousVulnIDs) != 1 || !snap[0].PreviousVulnIDs["CVE-2024-0001"] {
+		t.Fatalf("unexpected PreviousVulnIDs: %v", snap[0].PreviousVulnIDs)
+	}
 }
 
 func TestSetError(t *testing.T) {

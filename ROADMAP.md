@@ -296,17 +296,17 @@ VORDR_LOG_LEVEL=info                    # Log level
 
 ### v0.2 -- Observability
 
-- [ ] /details JSON endpoint -- per-image CVE list with package, installed version, fix version
-- [ ] Trivy DB age metric + alert when DB is stale
-- [ ] Grafana dashboard (CVE overview panel for the security dashboard)
-- [ ] Structured logging with scan lifecycle events
+- [x] /details JSON endpoint -- per-image CVE list with package, installed version, fix version
+- [x] Trivy DB age metric + alert when DB is stale
+- [x] Grafana dashboard (CVE overview panel for the security dashboard)
+- [x] Structured logging with scan lifecycle events
 
 ### v0.3 -- Smarts
 
-- [ ] Image exclude patterns (skip known-noisy base images)
-- [ ] Delta detection -- log/alert only on newly appeared CVEs between rescans
-- [ ] Configurable severity threshold for alerts
-- [ ] Retry backoff tuning
+- [x] Image exclude patterns (skip known-noisy base images)
+- [x] Delta detection -- log/alert only on newly appeared CVEs between rescans
+- [x] Configurable severity threshold for alerts
+- [x] Retry backoff tuning
 
 ### Future Ideas
 

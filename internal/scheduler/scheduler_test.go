@@ -19,7 +19,7 @@ func TestSchedulerRescan(t *testing.T) {
 	scanCh := make(chan scanner.ImageRef, 10)
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	sched := New(100*time.Millisecond, s, scanCh, logger)
+	sched := New(100*time.Millisecond, s, scanCh, func(string) bool { return false }, logger)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 	defer cancel()

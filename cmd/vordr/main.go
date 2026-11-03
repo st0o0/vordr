@@ -15,6 +15,7 @@ import (
 
 	"github.com/st0o0/vordr/internal/config"
 	"github.com/st0o0/vordr/internal/metrics"
+	"github.com/st0o0/vordr/internal/retry"
 	"github.com/st0o0/vordr/internal/scanner"
 	"github.com/st0o0/vordr/internal/scheduler"
 	"github.com/st0o0/vordr/internal/store"
@@ -59,9 +60,10 @@ func main() {
 	st := store.New()
 	trivyClient := trivy.NewCLI(cfg.TrivyCacheDir, cfg.TrivyTimeout)
 	dbChecker := trivy.NewDBChecker(cfg.TrivyCacheDir, 30*time.Minute, logger)
-	pool := worker.NewPool(cfg.ScanWorkers, scanCh, st, trivyClient, logger)
-	w := watcher.New(dockerClient, st, scanCh, cfg.ScanStagger, logger)
-	sched := scheduler.New(cfg.ScanInterval, st, scanCh, logger)
+	retryQueue := retry.New(scanCh, cfg.RetryMaxBackoff, logger)
+	pool := worker.NewPool(cfg.ScanWorkers, scanCh, st, trivyClient, cfg.AlertSeverity, retryQueue, logger)
+	w := watcher.New(dockerClient, st, scanCh, cfg.ScanStagger, cfg.ShouldExclude, logger)
+	sched := scheduler.New(cfg.ScanInterval, st, scanCh, cfg.ShouldExclude, logger)
 
 	registry := prometheus.NewRegistry()
 	collector := metrics.NewCollector(st, &pool.ActiveWorkers, func() int { return len(scanCh) }, dbChecker.DBUpdatedAt)
@@ -76,6 +78,9 @@ func main() {
 		"scan_interval", cfg.ScanInterval,
 		"scan_workers", cfg.ScanWorkers,
 		"metrics_addr", cfg.ListenAddr,
+		"exclude_images", cfg.ExcludeImages,
+		"alert_severity", cfg.AlertSeverity,
+		"retry_max_backoff", cfg.RetryMaxBackoff,
 	)
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -90,6 +95,7 @@ func main() {
 	g.Go(func() error { return sched.Run(ctx) })
 	g.Go(func() error { return pool.Run(ctx) })
 	g.Go(func() error { return dbChecker.Run(ctx) })
+	g.Go(func() error { return retryQueue.Run(ctx) })
 
 	if err := g.Wait(); err != nil {
 		logger.Error("fatal error", "event", "fatal_error", "error", err)

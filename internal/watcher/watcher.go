@@ -20,15 +20,17 @@ type Watcher struct {
 	store   *store.Store
 	scanCh  chan<- scanner.ImageRef
 	stagger time.Duration
+	exclude func(string) bool
 	logger  *slog.Logger
 }
 
-func New(docker client.APIClient, s *store.Store, scanCh chan<- scanner.ImageRef, stagger time.Duration, logger *slog.Logger) *Watcher {
+func New(docker client.APIClient, s *store.Store, scanCh chan<- scanner.ImageRef, stagger time.Duration, exclude func(string) bool, logger *slog.Logger) *Watcher {
 	return &Watcher{
 		docker:  docker,
 		store:   s,
 		scanCh:  scanCh,
 		stagger: stagger,
+		exclude: exclude,
 		logger:  logger,
 	}
 }
@@ -43,6 +45,10 @@ func (w *Watcher) Run(ctx context.Context) error {
 	for _, c := range containers {
 		ref := ParseImageRef(c.Image)
 		ref.ImageID = c.ImageID
+		if w.exclude(ref.String()) {
+			w.logger.Debug("image excluded", "event", "image_excluded", "image", ref.String())
+			continue
+		}
 		name := containerName(c.Names)
 		if w.store.Add(ref, name) {
 			initial = append(initial, ref)
@@ -103,6 +109,10 @@ func (w *Watcher) handleEvent(ctx context.Context, msg events.Message) {
 
 	switch msg.Action {
 	case events.ActionStart:
+		if w.exclude(ref.String()) {
+			w.logger.Debug("image excluded", "event", "image_excluded", "image", ref.String())
+			return
+		}
 		if imageID := w.inspectImageID(ctx, msg.Actor.ID); imageID != "" {
 			ref.ImageID = imageID
 		}

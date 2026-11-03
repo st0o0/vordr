@@ -13,14 +13,16 @@ type Scheduler struct {
 	interval time.Duration
 	store    *store.Store
 	scanCh   chan<- scanner.ImageRef
+	exclude  func(string) bool
 	logger   *slog.Logger
 }
 
-func New(interval time.Duration, s *store.Store, scanCh chan<- scanner.ImageRef, logger *slog.Logger) *Scheduler {
+func New(interval time.Duration, s *store.Store, scanCh chan<- scanner.ImageRef, exclude func(string) bool, logger *slog.Logger) *Scheduler {
 	return &Scheduler{
 		interval: interval,
 		store:    s,
 		scanCh:   scanCh,
+		exclude:  exclude,
 		logger:   logger,
 	}
 }
@@ -44,6 +46,9 @@ func (s *Scheduler) rescan(ctx context.Context) {
 	s.logger.Info("scheduled rescan", "event", "scheduled_rescan", "images", len(images))
 
 	for _, ref := range images {
+		if s.exclude(ref.String()) {
+			continue
+		}
 		select {
 		case <-ctx.Done():
 			return

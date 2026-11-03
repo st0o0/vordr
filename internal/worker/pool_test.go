@@ -33,7 +33,7 @@ func TestPoolScanSuccess(t *testing.T) {
 		Fixable: map[string]int{"HIGH": 1},
 	}}
 
-	pool := NewPool(1, scanCh, s, mock, discardLogger())
+	pool := NewPool(1, scanCh, s, mock, "HIGH", nil, discardLogger())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -69,7 +69,7 @@ func TestPoolScanError(t *testing.T) {
 
 	mock := &mockScanner{err: fmt.Errorf("trivy failed")}
 
-	pool := NewPool(1, scanCh, s, mock, discardLogger())
+	pool := NewPool(1, scanCh, s, mock, "HIGH", nil, discardLogger())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
