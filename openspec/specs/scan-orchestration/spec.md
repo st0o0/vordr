@@ -1,16 +1,16 @@
 ## MODIFIED Requirements
 
-### Requirement: Worker pool scan target
-The worker pool SHALL use `ImageRef.ScanTarget()` as the Trivy CLI argument instead of `ImageRef.String()`. ScanTarget() SHALL return ImageID when available, falling back to Image:Tag.
+### Requirement: Structured logging
+All components SHALL use structured slog logging with an `event` attribute for machine-parseable log events.
 
-#### Scenario: Scan with ImageID
-- **WHEN** a worker scans an image with ImageID `sha256:52d09...`
-- **THEN** the Trivy CLI SHALL be called with `sha256:52d09...` as the image argument
+#### Scenario: Scan lifecycle events
+- **WHEN** a scan completes
+- **THEN** the log entry SHALL include `event=scan_completed`, `image`, `duration`, and `counts` attributes
 
-#### Scenario: Scan without ImageID (fallback)
-- **WHEN** a worker scans an image with no ImageID
-- **THEN** the Trivy CLI SHALL be called with `Image:Tag` as the image argument
+#### Scenario: Discovery events
+- **WHEN** a new image is discovered
+- **THEN** the log entry SHALL include `event=image_discovered`, `image`, and `container` attributes
 
-#### Scenario: Store key uses display name
-- **WHEN** a worker updates the store after scanning
-- **THEN** the store key SHALL be `Image:Tag` (not the ImageID)
+#### Scenario: Scheduled rescan
+- **WHEN** the scheduler triggers a rescan
+- **THEN** the log entry SHALL include `event=scheduled_rescan` and `images` count

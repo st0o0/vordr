@@ -1,12 +1,12 @@
 ## MODIFIED Requirements
 
-### Requirement: Custom Prometheus registry
-The metrics package SHALL create a custom `prometheus.NewRegistry()` and MUST NOT use the global DefaultRegisterer. The Metrics struct SHALL register a custom Collector that generates vulnerability metrics dynamically from the Store snapshot.
+### Requirement: Metrics HTTP server
+The metrics server SHALL expose /details in addition to /metrics and /healthz. The Trivy DB age metric SHALL be included in the Prometheus collector output.
 
-#### Scenario: Registry isolation
+#### Scenario: Details endpoint registered
 - **WHEN** the metrics server starts
-- **THEN** only explicitly registered vordr metrics SHALL appear on /metrics (no go_* or process_* unless explicitly added)
+- **THEN** GET /details SHALL be routable and return JSON
 
-#### Scenario: Dynamic metrics from store
-- **WHEN** the store contains scanned images
-- **THEN** the custom collector SHALL call Store.Snapshot() and generate all vordr_* metrics for the current state
+#### Scenario: DB age in metrics
+- **WHEN** /metrics is scraped
+- **THEN** vordr_trivy_db_updated_timestamp_seconds SHALL be present
