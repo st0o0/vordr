@@ -1,0 +1,9 @@
+// Vordr CVE scanner metrics
+prometheus.scrape "vordr" {
+  targets = [{
+    __address__ = "vordr:9550",
+  }]
+  forward_to      = [prometheus.remote_write.default.receiver]
+  scrape_interval = "30s"
+  metrics_path    = "/metrics"
+}

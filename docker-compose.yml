@@ -1,0 +1,17 @@
+services:
+  vordr:
+    build: .
+    container_name: vordr
+    restart: unless-stopped
+    environment:
+      VORDR_TRIVY_CACHE_DIR: /var/cache/trivy
+      VORDR_SCAN_INTERVAL: 6h
+      VORDR_SCAN_WORKERS: 3
+    ports:
+      - "9550:9550"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - trivy-cache:/var/cache/trivy
+
+volumes:
+  trivy-cache:
