@@ -1,6 +1,6 @@
 # vörðr
 
-Lightweight CVE scanner for homelab Docker stacks. Watches running containers via the Docker API, scans images via bundled Trivy CLI, and exposes vulnerability metrics via a Prometheus endpoint. Single container -- no Trivy sidecar needed.
+Lightweight CVE scanner for homelab Docker stacks. Watches running containers via the Docker API, scans images via bundled Trivy CLI, and exposes vulnerability metrics via a Prometheus endpoint. Single container - no Trivy sidecar needed.
 
 ## Architecture
 
@@ -36,7 +36,7 @@ golangci-lint run
 - Metric names prefixed with `vordr_`
 - Custom Prometheus registry (never DefaultRegisterer)
 - Errors wrapped with `fmt.Errorf` and `%w`
-- Config loaded via `config.Load(os.Getenv)` -- testable by injecting getenv
+- Config loaded via `config.Load(os.Getenv)` - testable by injecting getenv
 
 ## Deployment
 
@@ -44,6 +44,6 @@ Single container with bundled Trivy binary (~200MB). Trivy DB cached on a volume
 
 ## Security-sensitive areas
 
-- `internal/trivy/` -- HTTP client communicating with Trivy server
-- `internal/watcher/` -- Docker socket access (read-only)
-- `internal/store/` -- shared mutable state (sync.RWMutex)
+- `internal/trivy/` - HTTP client communicating with Trivy server
+- `internal/watcher/` - Docker socket access (read-only)
+- `internal/store/` - shared mutable state (sync.RWMutex)

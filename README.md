@@ -26,15 +26,15 @@ volumes:
 
 ## Features
 
-- **Container discovery** -- lists running containers on startup and watches Docker events for start/stop in real time
-- **Bundled Trivy** -- single container image (~200 MB), no sidecar needed; vulnerability DB cached on a volume
-- **Prometheus metrics** -- per-image vulnerability counts by severity, scan status, timing, container-to-image mapping, and Trivy DB age
-- **`/details` endpoint** -- JSON API with per-image CVE lists including package, installed version, fix version, and severity
-- **Image exclusion** -- glob patterns to skip known-noisy base images
-- **Delta detection** -- on rescan, only newly appeared CVEs are logged; severity threshold controls what is alert-worthy
-- **Retry backoff** -- failed scans are retried with exponential backoff (30 s to 15 min) instead of waiting for the next scheduled rescan
-- **Staggered startup** -- discovered images are queued with a configurable gap to avoid overwhelming Trivy on cold start
-- **Grafana dashboard** -- importable JSON dashboard with stat panels, severity charts, per-image table, and DB age gauge
+- **Container discovery** - lists running containers on startup and watches Docker events for start/stop in real time
+- **Bundled Trivy** - single container image (~200 MB), no sidecar needed; vulnerability DB cached on a volume
+- **Prometheus metrics** - per-image vulnerability counts by severity, scan status, timing, container-to-image mapping, and Trivy DB age
+- **`/details` endpoint** - JSON API with per-image CVE lists including package, installed version, fix version, and severity
+- **Image exclusion** - glob patterns to skip known-noisy base images
+- **Delta detection** - on rescan, only newly appeared CVEs are logged; severity threshold controls what is alert-worthy
+- **Retry backoff** - failed scans are retried with exponential backoff (30 s to 15 min) instead of waiting for the next scheduled rescan
+- **Staggered startup** - discovered images are queued with a configurable gap to avoid overwhelming Trivy on cold start
+- **Grafana dashboard** - importable JSON dashboard with stat panels, severity charts, per-image table, and DB age gauge
 
 ## Configuration
 
