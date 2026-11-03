@@ -1,0 +1,13 @@
+vordr
+Copyright (c) 2026 st0o0
+Licensed under the MIT License (see LICENSE).
+
+vordr is a pure-Go static binary; the distributed container image bundles
+no third-party GPL software. Its Go module dependencies are permissively
+licensed (MIT/Apache-2.0/BSD), including:
+
+  - github.com/docker/docker (Apache-2.0): Docker Engine API client
+  - github.com/prometheus/client_golang (Apache-2.0): Prometheus metrics
+  - golang.org/x/sync (BSD-3-Clause): errgroup structured concurrency
+
+See each module's repository for its full license text.

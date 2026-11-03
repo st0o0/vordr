@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    uses: st0o0/github-workflows/.github/workflows/release-please.yml@main
+    permissions:
+      contents: write
+      pull-requests: write
+
+  docker:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: st0o0/github-workflows/.github/workflows/docker-release.yml@main
+    with:
+      version: ${{ needs.release-please.outputs.version }}
+      image-name: ghcr.io/st0o0/vordr
+      image-description: "Lightweight CVE scanner for homelab Docker stacks"
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
