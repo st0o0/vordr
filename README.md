@@ -1,8 +1,8 @@
 # vordr
 
-[![Release](https://img.shields.io/github/v/release/st0o0/vordr?style=flat-square)](https://github.com/st0o0/vordr/releases)
-[![GHCR](https://img.shields.io/badge/ghcr.io-st0o0%2Fvordr-blue?style=flat-square)](https://ghcr.io/st0o0/vordr)
-[![License](https://img.shields.io/github/license/st0o0/vordr?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/st0o0/vordr?sort=semver&style=flat-square)](https://github.com/st0o0/vordr/releases)
+[![GHCR](https://img.shields.io/badge/ghcr.io-st0o0%2Fvordr-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/st0o0/vordr/pkgs/container/vordr)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
 Lightweight CVE scanner for homelab Docker stacks. Watches running containers via the Docker API, scans images with a bundled Trivy CLI, and exposes vulnerability metrics via a Prometheus endpoint.
 
@@ -120,7 +120,7 @@ golangci-lint run
 docker build -t vordr:ci .
 ```
 
-Commits follow [Conventional Commits](https://www.conventionalcommits.org/); releases and the GHCR image are cut automatically by release-please.
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/); releases and the GHCR image are cut automatically by release-please. See [CONTRIBUTING.md](CONTRIBUTING.md) for full development guidelines.
 
 ## License
 
