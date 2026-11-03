@@ -98,9 +98,15 @@ func TestSetScanningAndUpdate(t *testing.T) {
 
 	counts := map[string]int{"HIGH": 3, "MEDIUM": 12}
 	fixable := map[string]int{"HIGH": 2}
-	s.UpdateResult("nginx:latest", counts, fixable, 14*time.Second)
+	vulns := []scanner.Vulnerability{
+		{ID: "CVE-2024-0001", PkgName: "libfoo", InstalledVersion: "1.0", FixedVersion: "1.1", Severity: "HIGH"},
+	}
+	s.UpdateResult("nginx:latest", counts, fixable, vulns, 14*time.Second)
 
 	snap := s.Snapshot()
+	if len(snap[0].Vulnerabilities) != 1 || snap[0].Vulnerabilities[0] != vulns[0] {
+		t.Fatalf("unexpected vulnerabilities: %+v", snap[0].Vulnerabilities)
+	}
 	if snap[0].Status != scanner.Scanned {
 		t.Fatalf("expected Scanned, got %v", snap[0].Status)
 	}

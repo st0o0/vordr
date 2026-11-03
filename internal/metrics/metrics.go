@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"sync/atomic"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -12,30 +13,36 @@ type Snapshotter interface {
 	Snapshot() []scanner.ImageState
 }
 
+type DBTimeFunc func() time.Time
+
 type Collector struct {
 	store         Snapshotter
 	activeWorkers *atomic.Int64
 	queueLen      func() int
+	dbTime        DBTimeFunc
+	dbUpdated     *prometheus.Desc
 
-	scanStatus     *prometheus.Desc
-	vulnCount      *prometheus.Desc
-	fixableCount   *prometheus.Desc
-	scanTimestamp  *prometheus.Desc
-	scanDuration   *prometheus.Desc
-	containerInfo  *prometheus.Desc
-	discovered     *prometheus.Desc
-	pending        *prometheus.Desc
-	scanned        *prometheus.Desc
-	errors         *prometheus.Desc
-	workersActive  *prometheus.Desc
-	queueLength    *prometheus.Desc
+	scanStatus    *prometheus.Desc
+	vulnCount     *prometheus.Desc
+	fixableCount  *prometheus.Desc
+	scanTimestamp *prometheus.Desc
+	scanDuration  *prometheus.Desc
+	containerInfo *prometheus.Desc
+	discovered    *prometheus.Desc
+	pending       *prometheus.Desc
+	scanned       *prometheus.Desc
+	errors        *prometheus.Desc
+	workersActive *prometheus.Desc
+	queueLength   *prometheus.Desc
 }
 
-func NewCollector(store Snapshotter, activeWorkers *atomic.Int64, queueLen func() int) *Collector {
+func NewCollector(store Snapshotter, activeWorkers *atomic.Int64, queueLen func() int, dbTime DBTimeFunc) *Collector {
 	return &Collector{
 		store:         store,
 		activeWorkers: activeWorkers,
 		queueLen:      queueLen,
+		dbTime:        dbTime,
+		dbUpdated:     prometheus.NewDesc("vordr_trivy_db_updated_timestamp_seconds", "Unix timestamp of last Trivy vulnerability DB update", nil, nil),
 		scanStatus:    prometheus.NewDesc("vordr_image_scan_status", "Image scan state (0=pending, 1=scanning, 2=scanned, 3=error)", []string{"image", "tag"}, nil),
 		vulnCount:     prometheus.NewDesc("vordr_vulnerability_count", "Vulnerability count by severity", []string{"image", "tag", "severity"}, nil),
 		fixableCount:  prometheus.NewDesc("vordr_fixable_count", "Fixable vulnerability count by severity", []string{"image", "tag", "severity"}, nil),
@@ -64,6 +71,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.errors
 	ch <- c.workersActive
 	ch <- c.queueLength
+	ch <- c.dbUpdated
 }
 
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
@@ -108,4 +116,8 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(c.errors, prometheus.GaugeValue, float64(nErrors))
 	ch <- prometheus.MustNewConstMetric(c.workersActive, prometheus.GaugeValue, float64(c.activeWorkers.Load()))
 	ch <- prometheus.MustNewConstMetric(c.queueLength, prometheus.GaugeValue, float64(c.queueLen()))
+
+	if t := c.dbTime(); !t.IsZero() {
+		ch <- prometheus.MustNewConstMetric(c.dbUpdated, prometheus.GaugeValue, float64(t.Unix()))
+	}
 }

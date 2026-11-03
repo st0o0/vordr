@@ -62,14 +62,14 @@ func (p *Pool) scan(ctx context.Context, ref scanner.ImageRef) {
 	key := ref.String()
 
 	if !p.store.SetScanning(key) {
-		p.logger.Debug("skipping already-scanning image", "image", key)
+		p.logger.Debug("skipping already-scanning image", "event", "scan_skipped", "image", key)
 		return
 	}
 
 	p.ActiveWorkers.Add(1)
 	defer p.ActiveWorkers.Add(-1)
 
-	p.logger.Info("scanning image", "image", key)
+	p.logger.Info("scanning image", "event", "scan_started", "image", key)
 	start := time.Now()
 
 	result, err := p.scanner.Scan(ctx, ref.ScanTarget())
@@ -79,11 +79,16 @@ func (p *Pool) scan(ctx context.Context, ref scanner.ImageRef) {
 		if ctx.Err() != nil {
 			return
 		}
-		p.logger.Error("scan failed", "image", key, "error", err, "duration", duration)
+		p.logger.Error("scan failed", "event", "scan_failed", "image", key, "error", err, "duration", duration)
 		p.store.SetError(key, err.Error())
 		return
 	}
 
-	p.store.UpdateResult(key, result.Counts, result.Fixable, duration)
-	p.logger.Info("scan complete", "image", key, "duration", duration, "counts", result.Counts)
+	vulns := make([]scanner.Vulnerability, len(result.Vulnerabilities))
+	for i, v := range result.Vulnerabilities {
+		vulns[i] = scanner.Vulnerability(v)
+	}
+
+	p.store.UpdateResult(key, result.Counts, result.Fixable, vulns, duration)
+	p.logger.Info("scan complete", "event", "scan_completed", "image", key, "duration", duration, "counts", result.Counts)
 }

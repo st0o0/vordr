@@ -41,7 +41,7 @@ func (s *Scheduler) Run(ctx context.Context) error {
 
 func (s *Scheduler) rescan(ctx context.Context) {
 	images := s.store.Images()
-	s.logger.Info("scheduled rescan", "images", len(images))
+	s.logger.Info("scheduled rescan", "event", "scheduled_rescan", "images", len(images))
 
 	for _, ref := range images {
 		select {

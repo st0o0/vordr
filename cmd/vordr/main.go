@@ -58,17 +58,19 @@ func main() {
 
 	st := store.New()
 	trivyClient := trivy.NewCLI(cfg.TrivyCacheDir, cfg.TrivyTimeout)
+	dbChecker := trivy.NewDBChecker(cfg.TrivyCacheDir, 30*time.Minute, logger)
 	pool := worker.NewPool(cfg.ScanWorkers, scanCh, st, trivyClient, logger)
 	w := watcher.New(dockerClient, st, scanCh, cfg.ScanStagger, logger)
 	sched := scheduler.New(cfg.ScanInterval, st, scanCh, logger)
 
 	registry := prometheus.NewRegistry()
-	collector := metrics.NewCollector(st, &pool.ActiveWorkers, func() int { return len(scanCh) })
+	collector := metrics.NewCollector(st, &pool.ActiveWorkers, func() int { return len(scanCh) }, dbChecker.DBUpdatedAt)
 	registry.MustRegister(collector)
 
-	srv := metrics.NewServer(cfg.ListenAddr, registry, version, startTime, logger)
+	srv := metrics.NewServer(cfg.ListenAddr, registry, version, startTime, st, logger)
 
 	logger.Info("vordr starting",
+		"event", "starting",
 		"version", version,
 		"trivy_cache_dir", cfg.TrivyCacheDir,
 		"scan_interval", cfg.ScanInterval,
@@ -87,13 +89,14 @@ func main() {
 	g.Go(func() error { return w.Run(ctx) })
 	g.Go(func() error { return sched.Run(ctx) })
 	g.Go(func() error { return pool.Run(ctx) })
+	g.Go(func() error { return dbChecker.Run(ctx) })
 
 	if err := g.Wait(); err != nil {
-		logger.Error("fatal error", "error", err)
+		logger.Error("fatal error", "event", "fatal_error", "error", err)
 		os.Exit(1)
 	}
 
-	logger.Info("shutdown complete")
+	logger.Info("shutdown complete", "event", "shutdown")
 }
 
 func newLogger(cfg *config.Config) *slog.Logger {

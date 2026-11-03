@@ -12,7 +12,7 @@ func TestParseTrivyOutput(t *testing.T) {
 		"Results": [{
 			"Target": "nginx:latest (debian 12.7)",
 			"Vulnerabilities": [
-				{"Severity": "HIGH", "FixedVersion": "1.2.3"},
+				{"VulnerabilityID": "CVE-2024-0001", "PkgName": "libfoo", "InstalledVersion": "1.0.0", "Severity": "HIGH", "FixedVersion": "1.2.3"},
 				{"Severity": "HIGH", "FixedVersion": ""},
 				{"Severity": "MEDIUM", "FixedVersion": "2.0.0"},
 				{"Severity": "LOW", "FixedVersion": ""},
@@ -41,9 +41,27 @@ func TestParseTrivyOutput(t *testing.T) {
 			if v.FixedVersion != "" {
 				result.Fixable[sev]++
 			}
+			result.Vulnerabilities = append(result.Vulnerabilities, Vulnerability{
+				ID:               v.VulnerabilityID,
+				PkgName:          v.PkgName,
+				InstalledVersion: v.InstalledVersion,
+				FixedVersion:     v.FixedVersion,
+				Severity:         sev,
+			})
 		}
 	}
 
+	if len(result.Vulnerabilities) != 5 {
+		t.Fatalf("expected 5 vulnerabilities, got %d", len(result.Vulnerabilities))
+	}
+	if got, want := result.Vulnerabilities[0], (Vulnerability{
+		ID: "CVE-2024-0001", PkgName: "libfoo", InstalledVersion: "1.0.0", FixedVersion: "1.2.3", Severity: "HIGH",
+	}); got != want {
+		t.Fatalf("vuln[0] = %+v, want %+v", got, want)
+	}
+	if result.Vulnerabilities[4].Severity != "UNKNOWN" {
+		t.Fatalf("expected UNKNOWN severity, got %q", result.Vulnerabilities[4].Severity)
+	}
 	if result.Counts["HIGH"] != 2 {
 		t.Fatalf("expected HIGH=2, got %d", result.Counts["HIGH"])
 	}

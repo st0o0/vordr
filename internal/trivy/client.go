@@ -22,8 +22,17 @@ func NewCLI(cacheDir string, timeout time.Duration) *CLI {
 }
 
 type ScanResult struct {
-	Counts  map[string]int // severity → total count
-	Fixable map[string]int // severity → fixable count
+	Counts          map[string]int // severity → total count
+	Fixable         map[string]int // severity → fixable count
+	Vulnerabilities []Vulnerability
+}
+
+type Vulnerability struct {
+	ID               string
+	PkgName          string
+	InstalledVersion string
+	FixedVersion     string
+	Severity         string
 }
 
 type trivyReport struct {
@@ -35,8 +44,11 @@ type trivyResult struct {
 }
 
 type vulnerability struct {
-	Severity     string `json:"Severity"`
-	FixedVersion string `json:"FixedVersion"`
+	VulnerabilityID  string `json:"VulnerabilityID"`
+	PkgName          string `json:"PkgName"`
+	InstalledVersion string `json:"InstalledVersion"`
+	FixedVersion     string `json:"FixedVersion"`
+	Severity         string `json:"Severity"`
 }
 
 func (c *CLI) Scan(ctx context.Context, imageRef string) (*ScanResult, error) {
@@ -82,6 +94,13 @@ func (c *CLI) Scan(ctx context.Context, imageRef string) (*ScanResult, error) {
 			if v.FixedVersion != "" {
 				result.Fixable[sev]++
 			}
+			result.Vulnerabilities = append(result.Vulnerabilities, Vulnerability{
+				ID:               v.VulnerabilityID,
+				PkgName:          v.PkgName,
+				InstalledVersion: v.InstalledVersion,
+				FixedVersion:     v.FixedVersion,
+				Severity:         sev,
+			})
 		}
 	}
 

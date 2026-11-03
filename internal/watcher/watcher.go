@@ -49,7 +49,7 @@ func (w *Watcher) Run(ctx context.Context) error {
 		}
 	}
 
-	w.logger.Info("initial container listing", "containers", len(containers), "unique_images", len(initial))
+	w.logger.Info("initial container listing", "event", "initial_listing", "containers", len(containers), "unique_images", len(initial))
 
 	for i, ref := range initial {
 		if i > 0 {
@@ -108,25 +108,25 @@ func (w *Watcher) handleEvent(ctx context.Context, msg events.Message) {
 		}
 
 		if w.store.Add(ref, name) {
-			w.logger.Info("new image discovered", "image", ref.String(), "container", name)
+			w.logger.Info("new image discovered", "event", "image_discovered", "image", ref.String(), "container", name)
 			select {
 			case <-ctx.Done():
 			case w.scanCh <- ref:
 			}
 		} else {
-			w.logger.Debug("container started with known image", "image", ref.String(), "container", name)
+			w.logger.Debug("container started with known image", "event", "container_started", "image", ref.String(), "container", name)
 		}
 
 	case events.ActionDie:
 		w.store.Remove(name)
-		w.logger.Debug("container stopped", "container", name)
+		w.logger.Debug("container stopped", "event", "container_stopped", "container", name)
 	}
 }
 
 func (w *Watcher) inspectImageID(ctx context.Context, containerID string) string {
 	info, err := w.docker.ContainerInspect(ctx, containerID)
 	if err != nil {
-		w.logger.Debug("failed to inspect container for ImageID", "container", containerID, "error", err)
+		w.logger.Debug("failed to inspect container for ImageID", "event", "inspect_failed", "container", containerID, "error", err)
 		return ""
 	}
 	return info.Image

@@ -22,6 +22,7 @@ type entry struct {
 	scannedAt  time.Time
 	duration   time.Duration
 	errMsg     string
+	vulns      []scanner.Vulnerability
 }
 
 func New() *Store {
@@ -81,7 +82,7 @@ func (s *Store) SetScanning(image string) bool {
 	return true
 }
 
-func (s *Store) UpdateResult(image string, counts, fixable map[string]int, duration time.Duration) {
+func (s *Store) UpdateResult(image string, counts, fixable map[string]int, vulns []scanner.Vulnerability, duration time.Duration) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -92,6 +93,7 @@ func (s *Store) UpdateResult(image string, counts, fixable map[string]int, durat
 	e.status = scanner.Scanned
 	e.counts = counts
 	e.fixable = fixable
+	e.vulns = vulns
 	e.scannedAt = time.Now()
 	e.duration = duration
 	e.errMsg = ""
@@ -138,6 +140,10 @@ func (s *Store) Snapshot() []scanner.ImageState {
 			for k, v := range e.fixable {
 				state.Fixable[k] = v
 			}
+		}
+
+		if e.vulns != nil {
+			state.Vulnerabilities = slices.Clone(e.vulns)
 		}
 
 		out = append(out, state)

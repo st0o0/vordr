@@ -43,13 +43,22 @@ func (r ImageRef) ScanTarget() string {
 	return r.String()
 }
 
+type Vulnerability struct {
+	ID               string
+	PkgName          string
+	InstalledVersion string
+	FixedVersion     string
+	Severity         string
+}
+
 type ImageState struct {
-	Ref        ImageRef
-	Status     Status
-	Containers []string
-	Counts     map[string]int // severity → count
-	Fixable    map[string]int // severity → fixable count
-	ScannedAt  time.Time
-	Duration   time.Duration
-	Error      string
+	Ref             ImageRef
+	Status          Status
+	Containers      []string
+	Counts          map[string]int // severity → count
+	Fixable         map[string]int // severity → fixable count
+	ScannedAt       time.Time
+	Duration        time.Duration
+	Error           string
+	Vulnerabilities []Vulnerability
 }

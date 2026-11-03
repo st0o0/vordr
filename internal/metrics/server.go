@@ -16,10 +16,11 @@ type Server struct {
 	logger     *slog.Logger
 }
 
-func NewServer(addr string, registry *prometheus.Registry, version string, startTime time.Time, logger *slog.Logger) *Server {
+func NewServer(addr string, registry *prometheus.Registry, version string, startTime time.Time, store Snapshotter, logger *slog.Logger) *Server {
 	mux := http.NewServeMux()
 	mux.Handle("GET /metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 	mux.HandleFunc("GET /healthz", healthzHandler(version, startTime))
+	mux.HandleFunc("GET /details", detailsHandler(store))
 
 	return &Server{
 		httpServer: &http.Server{

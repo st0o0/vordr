@@ -22,7 +22,7 @@ func (m *mockStore) Snapshot() []scanner.ImageState {
 
 func TestCollectorEmptyStore(t *testing.T) {
 	var active atomic.Int64
-	c := NewCollector(&mockStore{}, &active, func() int { return 0 })
+	c := NewCollector(&mockStore{}, &active, func() int { return 0 }, func() time.Time { return time.Time{} })
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(c)
@@ -31,7 +31,6 @@ func TestCollectorEmptyStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Should have 6 operational metrics even with empty store
 	if count != 6 {
 		t.Fatalf("expected 6 metrics (operational), got %d", count)
 	}
@@ -54,7 +53,7 @@ func TestCollectorWithScannedImage(t *testing.T) {
 
 	var active atomic.Int64
 	active.Store(1)
-	c := NewCollector(store, &active, func() int { return 2 })
+	c := NewCollector(store, &active, func() int { return 2 }, func() time.Time { return time.Unix(1730000000, 0) })
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(c)
@@ -90,7 +89,7 @@ func TestCollectorPendingImageNoVulnMetrics(t *testing.T) {
 	}
 
 	var active atomic.Int64
-	c := NewCollector(store, &active, func() int { return 0 })
+	c := NewCollector(store, &active, func() int { return 0 }, func() time.Time { return time.Time{} })
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(c)
