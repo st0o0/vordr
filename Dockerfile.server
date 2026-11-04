@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1
+
+FROM aquasec/trivy:0.76.1
+
+LABEL org.opencontainers.image.title="vordr-server" \
+      org.opencontainers.image.description="Trivy vulnerability DB server for vordr" \
+      org.opencontainers.image.source="https://github.com/st0o0/vordr" \
+      org.opencontainers.image.documentation="https://github.com/st0o0/vordr#readme" \
+      org.opencontainers.image.licenses="MIT"
+
+EXPOSE 4954
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD ["wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4954/healthz"]
+
+ENTRYPOINT ["trivy", "server", "--listen", "0.0.0.0:4954"]

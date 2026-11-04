@@ -5,6 +5,23 @@ import (
 	"testing"
 )
 
+func TestNewCLIStandaloneArgs(t *testing.T) {
+	cli := NewCLI("/cache", 5*60000000000, "")
+	if cli.serverURL != "" {
+		t.Errorf("expected empty serverURL, got %q", cli.serverURL)
+	}
+	if cli.cacheDir != "/cache" {
+		t.Errorf("expected cacheDir /cache, got %q", cli.cacheDir)
+	}
+}
+
+func TestNewCLIServerArgs(t *testing.T) {
+	cli := NewCLI("/cache", 5*60000000000, "http://trivy:4954")
+	if cli.serverURL != "http://trivy:4954" {
+		t.Errorf("expected serverURL http://trivy:4954, got %q", cli.serverURL)
+	}
+}
+
 func TestParseTrivyOutput(t *testing.T) {
 	raw := `{
 		"SchemaVersion": 2,

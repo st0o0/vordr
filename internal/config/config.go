@@ -12,6 +12,7 @@ import (
 
 type Config struct {
 	TrivyCacheDir   string
+	TrivyServerURL  string
 	TrivyTimeout    time.Duration
 	ScanInterval    time.Duration
 	ScanWorkers     int
@@ -35,6 +36,7 @@ func (c *Config) ShouldExclude(imageTag string) bool {
 
 func Load(getenv func(string) string) (*Config, error) {
 	trivyCacheDir := envOrDefault(getenv, "VORDR_TRIVY_CACHE_DIR", "/var/cache/trivy")
+	trivyServerURL := getenv("VORDR_TRIVY_SERVER_URL")
 
 	trivyTimeout, err := parseDuration(getenv, "VORDR_TRIVY_TIMEOUT", "5m")
 	if err != nil {
@@ -95,6 +97,7 @@ func Load(getenv func(string) string) (*Config, error) {
 
 	return &Config{
 		TrivyCacheDir:   trivyCacheDir,
+		TrivyServerURL:  trivyServerURL,
 		TrivyTimeout:    trivyTimeout,
 		ScanInterval:    scanInterval,
 		ScanWorkers:     scanWorkers,

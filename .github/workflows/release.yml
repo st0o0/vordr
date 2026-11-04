@@ -28,3 +28,17 @@ jobs:
       contents: read
       packages: write
       id-token: write
+
+  docker-server:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: st0o0/github-workflows/.github/workflows/docker-release.yml@main
+    with:
+      version: ${{ needs.release-please.outputs.version }}
+      image-name: ghcr.io/st0o0/vordr-server
+      image-description: "Trivy vulnerability DB server for vordr"
+      dockerfile: Dockerfile.server
+    permissions:
+      contents: read
+      packages: write
+      id-token: write

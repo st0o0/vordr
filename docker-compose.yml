@@ -7,6 +7,9 @@ services:
       VORDR_TRIVY_CACHE_DIR: /var/cache/trivy
       VORDR_SCAN_INTERVAL: 6h
       VORDR_SCAN_WORKERS: 3
+      # Server mode: set VORDR_TRIVY_SERVER_URL to a central Trivy server
+      # to share the vulnerability DB across multiple machines.
+      # Example: VORDR_TRIVY_SERVER_URL: http://trivy-server:4954
     ports:
       - "9550:9550"
     volumes:

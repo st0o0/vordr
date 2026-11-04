@@ -10,14 +10,16 @@ import (
 )
 
 type CLI struct {
-	cacheDir string
-	timeout  time.Duration
+	cacheDir  string
+	serverURL string
+	timeout   time.Duration
 }
 
-func NewCLI(cacheDir string, timeout time.Duration) *CLI {
+func NewCLI(cacheDir string, timeout time.Duration, serverURL string) *CLI {
 	return &CLI{
-		cacheDir: cacheDir,
-		timeout:  timeout,
+		cacheDir:  cacheDir,
+		serverURL: serverURL,
+		timeout:   timeout,
 	}
 }
 
@@ -55,12 +57,15 @@ func (c *CLI) Scan(ctx context.Context, imageRef string) (*ScanResult, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "trivy", "image",
-		"--format", "json",
-		"--scanners", "vuln",
-		"--quiet",
-		"--cache-dir", c.cacheDir,
-		imageRef)
+	args := []string{"image", "--format", "json", "--scanners", "vuln", "--quiet"}
+	if c.serverURL != "" {
+		args = append(args, "--server", c.serverURL)
+	} else {
+		args = append(args, "--cache-dir", c.cacheDir, "--skip-java-db-update")
+	}
+	args = append(args, imageRef)
+
+	cmd := exec.CommandContext(ctx, "trivy", args...)
 
 	out, err := cmd.Output()
 	if err != nil {

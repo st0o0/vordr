@@ -58,8 +58,8 @@ func main() {
 	scanCh := make(chan scanner.ImageRef, 2*cfg.ScanWorkers)
 
 	st := store.New()
-	trivyClient := trivy.NewCLI(cfg.TrivyCacheDir, cfg.TrivyTimeout)
-	dbChecker := trivy.NewDBChecker(cfg.TrivyCacheDir, 30*time.Minute, logger)
+	trivyClient := trivy.NewCLI(cfg.TrivyCacheDir, cfg.TrivyTimeout, cfg.TrivyServerURL)
+	dbChecker := trivy.NewDBChecker(cfg.TrivyCacheDir, 30*time.Minute, logger, cfg.TrivyServerURL == "")
 	retryQueue := retry.New(scanCh, cfg.RetryMaxBackoff, logger)
 	pool := worker.NewPool(cfg.ScanWorkers, scanCh, st, trivyClient, cfg.AlertSeverity, retryQueue, logger)
 	w := watcher.New(dockerClient, st, scanCh, cfg.ScanStagger, cfg.ShouldExclude, logger)
@@ -71,7 +71,7 @@ func main() {
 
 	srv := metrics.NewServer(cfg.ListenAddr, registry, version, startTime, st, logger)
 
-	logger.Info("vordr starting",
+	startupAttrs := []any{
 		"event", "starting",
 		"version", version,
 		"trivy_cache_dir", cfg.TrivyCacheDir,
@@ -81,7 +81,11 @@ func main() {
 		"exclude_images", cfg.ExcludeImages,
 		"alert_severity", cfg.AlertSeverity,
 		"retry_max_backoff", cfg.RetryMaxBackoff,
-	)
+	}
+	if cfg.TrivyServerURL != "" {
+		startupAttrs = append(startupAttrs, "trivy_server_url", cfg.TrivyServerURL)
+	}
+	logger.Info("vordr starting", startupAttrs...)
 
 	g, ctx := errgroup.WithContext(ctx)
 

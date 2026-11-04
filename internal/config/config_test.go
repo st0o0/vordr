@@ -53,6 +53,24 @@ func TestLoadExcludeImages(t *testing.T) {
 	}
 }
 
+func TestLoadTrivyServerURL(t *testing.T) {
+	cfg, err := Load(env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.TrivyServerURL != "" {
+		t.Errorf("default = %q, want empty", cfg.TrivyServerURL)
+	}
+
+	cfg, err = Load(env(map[string]string{"VORDR_TRIVY_SERVER_URL": "http://trivy:4954"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.TrivyServerURL != "http://trivy:4954" {
+		t.Errorf("got %q, want http://trivy:4954", cfg.TrivyServerURL)
+	}
+}
+
 func TestLoadAlertSeverity(t *testing.T) {
 	cfg, err := Load(env(nil))
 	if err != nil {

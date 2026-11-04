@@ -12,14 +12,16 @@ import (
 type DBChecker struct {
 	cacheDir string
 	interval time.Duration
+	enabled  bool
 	dbTime   atomic.Pointer[time.Time]
 	logger   *slog.Logger
 }
 
-func NewDBChecker(cacheDir string, interval time.Duration, logger *slog.Logger) *DBChecker {
+func NewDBChecker(cacheDir string, interval time.Duration, logger *slog.Logger, enabled bool) *DBChecker {
 	return &DBChecker{
 		cacheDir: cacheDir,
 		interval: interval,
+		enabled:  enabled,
 		logger:   logger,
 	}
 }
@@ -32,6 +34,12 @@ func (c *DBChecker) DBUpdatedAt() time.Time {
 }
 
 func (c *DBChecker) Run(ctx context.Context) error {
+	if !c.enabled {
+		c.logger.Info("db checker disabled (server mode)", "event", "db_check_disabled")
+		<-ctx.Done()
+		return nil
+	}
+
 	c.check(ctx)
 
 	ticker := time.NewTicker(c.interval)

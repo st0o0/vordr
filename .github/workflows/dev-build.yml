@@ -32,3 +32,16 @@ jobs:
       packages: write
       pull-requests: write
       id-token: write
+
+  docker-server:
+    needs: gate
+    uses: st0o0/github-workflows/.github/workflows/docker-dev.yml@main
+    with:
+      image-name: ghcr.io/st0o0/vordr-server
+      image-description: "Dev build of vordr-server"
+      dockerfile: Dockerfile.server
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+      id-token: write
