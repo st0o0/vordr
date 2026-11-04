@@ -1,0 +1,45 @@
+services:
+  vordr:
+    build: .
+    container_name: vordr
+    ports:
+      - "9550:9550"
+    environment:
+      VORDR_TRIVY_CACHE_DIR: /var/cache/trivy
+      VORDR_SCAN_INTERVAL: 30s
+      VORDR_SCAN_STAGGER: 2s
+      VORDR_SCAN_WORKERS: 2
+      VORDR_LOG_LEVEL: debug
+      VORDR_LOG_FORMAT: text
+      VORDR_EXCLUDE_IMAGES: "redis*,vordr-*"
+      # Uncomment to test server mode (comment out VORDR_TRIVY_CACHE_DIR):
+      # VORDR_TRIVY_SERVER_URL: http://vordr-server:4954
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - trivy-cache:/var/cache/trivy
+
+  vordr-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: vordr-server
+    profiles:
+      - server
+    volumes:
+      - trivy-cache:/root/.cache/trivy
+
+  workload-clean:
+    image: alpine:3.21
+    container_name: workload-clean
+    command: ["sleep", "infinity"]
+
+  workload-vuln:
+    image: nginx:1.24.0
+    container_name: workload-vuln
+
+  workload-exclude:
+    image: redis:7
+    container_name: workload-exclude
+
+volumes:
+  trivy-cache:
