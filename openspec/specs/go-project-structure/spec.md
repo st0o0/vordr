@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Go module initialization
-The project SHALL have a Go module at `github.com/st0o0/vordr` with Go 1.26.x and dependencies on docker/docker, prometheus/client_golang, and golang.org/x/sync.
+The project SHALL have a Go module at `github.com/st0o0/vordr` with Go 1.27.x and dependencies on docker/docker, prometheus/client_golang, and golang.org/x/sync.
 
 #### Scenario: Valid go.mod
 - **WHEN** the repository is cloned
