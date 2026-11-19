@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 
-FROM aquasec/trivy:0.76.1 AS trivy
+FROM aquasec/trivy:0.76.2 AS trivy
 
-FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:fa3d596898d9f126af7c01d14ee7597bab3f39cccf392ef36b69fe77cd681f18 AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS build
 ARG TARGETARCH
 ARG VERSION=dev
 WORKDIR /src
@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build \
     -ldflags="-s -w -X main.version=${VERSION}" \
     -o /vordr ./cmd/vordr
 
-FROM alpine:3.21
+FROM alpine:3.24
 RUN apk add --no-cache ca-certificates
 LABEL org.opencontainers.image.title="vordr" \
       org.opencontainers.image.description="Lightweight CVE scanner for homelab Docker stacks" \

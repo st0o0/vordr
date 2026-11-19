@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/client"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sync/errgroup"
 
@@ -44,7 +44,7 @@ func main() {
 
 	logger := newLogger(cfg)
 
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	dockerClient, err := client.New(client.FromEnv)
 	if err != nil {
 		logger.Error("failed to create docker client", "error", err)
 		os.Exit(1)

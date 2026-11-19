@@ -6,10 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/events"
+	"github.com/moby/moby/client"
 
 	"github.com/st0o0/vordr/internal/scanner"
 	"github.com/st0o0/vordr/internal/store"
@@ -36,13 +34,13 @@ func New(docker client.APIClient, s *store.Store, scanCh chan<- scanner.ImageRef
 }
 
 func (w *Watcher) Run(ctx context.Context) error {
-	containers, err := w.docker.ContainerList(ctx, container.ListOptions{})
+	result, err := w.docker.ContainerList(ctx, client.ContainerListOptions{})
 	if err != nil {
 		return err
 	}
 
 	var initial []scanner.ImageRef
-	for _, c := range containers {
+	for _, c := range result.Items {
 		ref := ParseImageRef(c.Image)
 		ref.ImageID = c.ImageID
 		if w.exclude(ref.String()) {
@@ -55,7 +53,7 @@ func (w *Watcher) Run(ctx context.Context) error {
 		}
 	}
 
-	w.logger.Info("initial container listing", "event", "initial_listing", "containers", len(containers), "unique_images", len(initial))
+	w.logger.Info("initial container listing", "event", "initial_listing", "containers", len(result.Items), "unique_images", len(initial))
 
 	for i, ref := range initial {
 		if i > 0 {
@@ -76,23 +74,23 @@ func (w *Watcher) Run(ctx context.Context) error {
 }
 
 func (w *Watcher) watch(ctx context.Context) error {
-	f := filters.NewArgs()
+	f := client.Filters{}
 	f.Add("type", string(events.ContainerEventType))
 	f.Add("event", "start")
 	f.Add("event", "die")
 
-	msgCh, errCh := w.docker.Events(ctx, events.ListOptions{Filters: f})
+	evResult := w.docker.Events(ctx, client.EventsListOptions{Filters: f})
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case err := <-errCh:
+		case err := <-evResult.Err:
 			if ctx.Err() != nil {
 				return nil
 			}
 			return err
-		case msg := <-msgCh:
+		case msg := <-evResult.Messages:
 			w.handleEvent(ctx, msg)
 		}
 	}
@@ -134,12 +132,12 @@ func (w *Watcher) handleEvent(ctx context.Context, msg events.Message) {
 }
 
 func (w *Watcher) inspectImageID(ctx context.Context, containerID string) string {
-	info, err := w.docker.ContainerInspect(ctx, containerID)
+	info, err := w.docker.ContainerInspect(ctx, containerID, client.ContainerInspectOptions{})
 	if err != nil {
 		w.logger.Debug("failed to inspect container for ImageID", "event", "inspect_failed", "container", containerID, "error", err)
 		return ""
 	}
-	return info.Image
+	return info.Container.Image
 }
 
 func ParseImageRef(image string) scanner.ImageRef {
