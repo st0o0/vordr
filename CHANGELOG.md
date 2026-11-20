@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.1.1](https://github.com/st0o0/vordr/compare/v0.1.0...v0.1.1) (2026-11-20)
+
+
+### Features
+
+* add embedded web dashboard on GET / ([2c8662a](https://github.com/st0o0/vordr/commit/2c8662ab75737731e3f770c54bee3486179c2493))
+
+
+### Bug Fixes
+
+* **security:** add trivy.yaml with DS-0002 skip and wire trivy-config ([92197f0](https://github.com/st0o0/vordr/commit/92197f0fd386ea3f78511446dc08cbc1b327ece1))
+* **security:** use .trivyignore for DS-0002 skip instead of trivy.yaml ([ce7dddc](https://github.com/st0o0/vordr/commit/ce7dddcef417f03b78dfbf8c614b81afd30581e8))
+
+
+### Refactoring
+
+* **security:** remove unused trivy.yaml placeholder ([531eb24](https://github.com/st0o0/vordr/commit/531eb240338296acbc9b2ac7acf9c39473a46ba0))
+
 ## 0.1.0 (2026-11-19)
 
 
