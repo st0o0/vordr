@@ -1,0 +1,4 @@
+# DS-0002: "Image user should not be root"
+# vordr requires root for Docker socket access and running Trivy scans
+# against container images on the host.
+AVD-DS-0002
