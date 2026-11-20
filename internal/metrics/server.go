@@ -9,6 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/st0o0/vordr/internal/ui"
 )
 
 type Server struct {
@@ -21,6 +22,7 @@ func NewServer(addr string, registry *prometheus.Registry, version string, start
 	mux.Handle("GET /metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 	mux.HandleFunc("GET /healthz", healthzHandler(version, startTime))
 	mux.HandleFunc("GET /details", detailsHandler(store))
+	mux.Handle("GET /", ui.Handler())
 
 	return &Server{
 		httpServer: &http.Server{

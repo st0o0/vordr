@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vordr</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --surface:#fcfcfb;--surface-2:#f4f4f2;--border:#e2e1de;
+  --text:#0b0b0b;--text-2:#52514e;--text-3:#8a8984;
+  --critical:#d03b3b;--high:#eb6834;--medium:#eda100;--low:#2a78d6;
+  --good:#0ca30c;
+  --radius:6px;
+  color-scheme:light dark;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --surface:#1a1a19;--surface-2:#252524;--border:#3a3a38;
+    --text:#f0efec;--text-2:#c3c2b7;--text-3:#8a8984;
+    --critical:#e66767;--high:#d95926;--medium:#c98500;--low:#3987e5;
+    --good:#0ca30c;
+  }
+}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--surface);color:var(--text);line-height:1.5}
+a{color:inherit}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border)}
+.header h1{font-size:1.25rem;font-weight:600;letter-spacing:-0.01em}
+.header-right{display:flex;align-items:center;gap:16px;font-size:0.8125rem;color:var(--text-2)}
+.health-dot{width:8px;height:8px;border-radius:50%;background:var(--good);display:inline-block;margin-right:4px}
+
+.container{max-width:960px;margin:0 auto;padding:24px}
+
+.tiles{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.tile{flex:1;min-width:100px;padding:16px;background:var(--surface-2);border-radius:var(--radius);text-align:center}
+.tile-value{font-size:1.75rem;font-weight:700;line-height:1.2}
+.tile-label{font-size:0.75rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.04em;margin-top:2px}
+.tile-critical .tile-value{color:var(--critical)}
+.tile-high .tile-value{color:var(--high)}
+.tile-medium .tile-value{color:var(--medium)}
+.tile-low .tile-value{color:var(--low)}
+
+.images{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.image-row{display:grid;grid-template-columns:1fr 100px 80px 100px;align-items:center;padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s}
+.image-row:last-child{border-bottom:none}
+.image-row:hover{background:var(--surface-2)}
+.image-name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.image-tag{color:var(--text-2);font-size:0.8125rem}
+.image-status{font-size:0.8125rem;color:var(--text-2)}
+.image-vulns{font-size:0.875rem;font-weight:600;text-align:right}
+.image-time{font-size:0.75rem;color:var(--text-3);text-align:right}
+.expand-icon{display:inline-block;transition:transform 0.15s;margin-right:6px;font-size:0.75rem;color:var(--text-3)}
+.expanded .expand-icon{transform:rotate(90deg)}
+
+.vuln-detail{display:none;border-bottom:1px solid var(--border)}
+.vuln-detail.open{display:block}
+.vuln-table{width:100%;border-collapse:collapse;font-size:0.8125rem}
+.vuln-table th{text-align:left;padding:8px 16px;color:var(--text-2);font-weight:500;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.vuln-table td{padding:8px 16px;border-bottom:1px solid var(--border)}
+.vuln-table tr:last-child td{border-bottom:none}
+
+.badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:0.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.03em}
+.badge-critical{background:var(--critical);color:#fff}
+.badge-high{background:var(--high);color:#fff}
+.badge-medium{background:var(--medium);color:#000}
+.badge-low{background:var(--low);color:#fff}
+.badge-unknown{background:var(--text-3);color:#fff}
+
+.footer{display:flex;justify-content:space-between;align-items:center;padding:16px 0;font-size:0.75rem;color:var(--text-3);margin-top:16px}
+
+.empty{padding:48px 24px;text-align:center;color:var(--text-3);font-size:0.875rem}
+.loading{padding:48px 24px;text-align:center;color:var(--text-3);font-size:0.875rem}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>vordr</h1>
+  <div class="header-right">
+    <span id="version"></span>
+    <span id="uptime"></span>
+    <span><span class="health-dot" id="health-dot"></span><span id="health-status">connecting</span></span>
+  </div>
+</header>
+
+<main class="container">
+  <div class="tiles" id="tiles">
+    <div class="tile"><div class="tile-value" id="total-count">-</div><div class="tile-label">Total</div></div>
+    <div class="tile tile-critical"><div class="tile-value" id="critical-count">-</div><div class="tile-label">Critical</div></div>
+    <div class="tile tile-high"><div class="tile-value" id="high-count">-</div><div class="tile-label">High</div></div>
+    <div class="tile tile-medium"><div class="tile-value" id="medium-count">-</div><div class="tile-label">Medium</div></div>
+    <div class="tile tile-low"><div class="tile-value" id="low-count">-</div><div class="tile-label">Low</div></div>
+  </div>
+
+  <div id="content"><div class="loading">Loading...</div></div>
+</main>
+
+<footer class="container">
+  <div class="footer">
+    <span>Auto-refresh: 30s</span>
+    <span>Last refresh: <span id="last-refresh">-</span></span>
+  </div>
+</footer>
+
+<script>
+(function() {
+  "use strict";
+
+  var refreshInterval = 30000;
+  var expanded = {};
+
+  function relativeTime(iso) {
+    if (!iso) return "-";
+    var diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return Math.floor(diff) + "s ago";
+    if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+    if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+    return Math.floor(diff / 86400) + "d ago";
+  }
+
+  function severityClass(s) {
+    switch ((s || "").toUpperCase()) {
+      case "CRITICAL": return "badge-critical";
+      case "HIGH": return "badge-high";
+      case "MEDIUM": return "badge-medium";
+      case "LOW": return "badge-low";
+      default: return "badge-unknown";
+    }
+  }
+
+  function escapeHtml(str) {
+    var d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function renderImages(images) {
+    var content = document.getElementById("content");
+    if (!images || images.length === 0) {
+      content.innerHTML = '<div class="empty">No images tracked yet.</div>';
+      return;
+    }
+
+    var html = '<div class="images">';
+    for (var i = 0; i < images.length; i++) {
+      var img = images[i];
+      var key = img.image + ":" + img.tag;
+      var isExpanded = expanded[key];
+      var vulnCount = img.vulnerabilities ? img.vulnerabilities.length : 0;
+      var isPending = img.status === "pending";
+
+      html += '<div class="image-row' + (isExpanded ? " expanded" : "") + '" data-key="' + escapeHtml(key) + '">';
+      html += '<div class="image-name"><span class="expand-icon">&#9654;</span>' + escapeHtml(img.image) + '<span class="image-tag">:' + escapeHtml(img.tag) + '</span></div>';
+      html += '<div class="image-status">' + escapeHtml(img.status) + '</div>';
+      html += '<div class="image-vulns">' + (isPending ? "-" : vulnCount) + '</div>';
+      html += '<div class="image-time">' + (isPending ? "-" : relativeTime(img.scanned_at)) + '</div>';
+      html += '</div>';
+
+      html += '<div class="vuln-detail' + (isExpanded ? " open" : "") + '" data-detail="' + escapeHtml(key) + '">';
+      if (vulnCount > 0) {
+        html += '<table class="vuln-table"><thead><tr><th>CVE</th><th>Package</th><th>Installed</th><th>Fixed</th><th>Severity</th></tr></thead><tbody>';
+        for (var j = 0; j < img.vulnerabilities.length; j++) {
+          var v = img.vulnerabilities[j];
+          html += '<tr>';
+          html += '<td>' + escapeHtml(v.id) + '</td>';
+          html += '<td>' + escapeHtml(v["package"]) + '</td>';
+          html += '<td>' + escapeHtml(v.installed) + '</td>';
+          html += '<td>' + (v.fixed ? escapeHtml(v.fixed) : '<span style="color:var(--text-3)">no fix</span>') + '</td>';
+          html += '<td><span class="badge ' + severityClass(v.severity) + '">' + escapeHtml(v.severity) + '</span></td>';
+          html += '</tr>';
+        }
+        html += '</tbody></table>';
+      } else if (!isPending) {
+        html += '<div class="empty" style="padding:16px">No vulnerabilities found.</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    content.innerHTML = html;
+
+    var rows = content.querySelectorAll(".image-row");
+    for (var r = 0; r < rows.length; r++) {
+      rows[r].addEventListener("click", toggleRow);
+    }
+  }
+
+  function toggleRow(e) {
+    var key = this.getAttribute("data-key");
+    expanded[key] = !expanded[key];
+    this.classList.toggle("expanded");
+    var detail = document.querySelector('[data-detail="' + key + '"]');
+    if (detail) detail.classList.toggle("open");
+  }
+
+  function updateTiles(images) {
+    var counts = {total: 0, CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0};
+    for (var i = 0; i < images.length; i++) {
+      var vulns = images[i].vulnerabilities;
+      if (!vulns) continue;
+      counts.total += vulns.length;
+      for (var j = 0; j < vulns.length; j++) {
+        var sev = (vulns[j].severity || "").toUpperCase();
+        if (counts[sev] !== undefined) counts[sev]++;
+      }
+    }
+    document.getElementById("total-count").textContent = counts.total;
+    document.getElementById("critical-count").textContent = counts.CRITICAL;
+    document.getElementById("high-count").textContent = counts.HIGH;
+    document.getElementById("medium-count").textContent = counts.MEDIUM;
+    document.getElementById("low-count").textContent = counts.LOW;
+  }
+
+  function updateHealth(data) {
+    document.getElementById("version").textContent = data.version ? "v" + data.version : "";
+    document.getElementById("uptime").textContent = data.uptime ? "up " + data.uptime : "";
+    var dot = document.getElementById("health-dot");
+    var status = document.getElementById("health-status");
+    if (data.status === "ok") {
+      dot.style.background = "var(--good)";
+      status.textContent = "healthy";
+    } else {
+      dot.style.background = "var(--critical)";
+      status.textContent = "unhealthy";
+    }
+  }
+
+  function refresh() {
+    fetch("/details")
+      .then(function(r) { return r.json(); })
+      .then(function(images) {
+        if (!Array.isArray(images)) images = [];
+        updateTiles(images);
+        renderImages(images);
+        document.getElementById("last-refresh").textContent = new Date().toLocaleTimeString();
+      })
+      .catch(function() {});
+
+    fetch("/healthz")
+      .then(function(r) { return r.json(); })
+      .then(updateHealth)
+      .catch(function() {});
+  }
+
+  refresh();
+  setInterval(refresh, refreshInterval);
+})();
+</script>
+</body>
+</html>
